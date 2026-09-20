@@ -135,6 +135,7 @@
       <button class="chip" data-cat="Anime">🎌 Animes</button>
       <button class="chip" data-cat="Animado">🧸 Animados</button>
     </div>
+    <div class="chips hidden" id="subFilterChips"></div>
   </div>
 
   <p class="status" id="statusMsg">⏳ Cargando catálogo...</p>
@@ -177,7 +178,11 @@ const WHATSAPP_ICON = '<svg viewBox="0 0 32 32" width="16" height="16" fill="cur
 
 let allItems = [];
 let activeCategory = '';
+let activeSubFilter = '';
 let supabaseClient = null;
+
+const GENRE_CATEGORIES = ['Película', 'Serie', 'Anime', 'Animado'];
+const COUNTRY_CATEGORIES = ['Novela', 'Dorama'];
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -206,13 +211,54 @@ async function loadCatalog(){
   }
 }
 
+function splitField(value){
+  return (value || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function buildSubFilterChips(){
+  const wrap = document.getElementById('subFilterChips');
+  wrap.innerHTML = '';
+
+  if(!GENRE_CATEGORIES.includes(activeCategory) && !COUNTRY_CATEGORIES.includes(activeCategory)){
+    wrap.classList.add('hidden');
+    return;
+  }
+
+  const byCategory = allItems.filter(item => item.categoria === activeCategory);
+  const field = GENRE_CATEGORIES.includes(activeCategory) ? 'genero' : 'pais';
+  const values = new Set();
+  byCategory.forEach(item => splitField(item[field]).forEach(v => values.add(v)));
+
+  if(values.size === 0){
+    wrap.classList.add('hidden');
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  const allBtn = document.createElement('button');
+  allBtn.className = 'chip' + (activeSubFilter === '' ? ' active' : '');
+  allBtn.textContent = 'Todos';
+  allBtn.dataset.val = '';
+  wrap.appendChild(allBtn);
+
+  [...values].sort().forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (activeSubFilter === v ? ' active' : '');
+    btn.textContent = v;
+    btn.dataset.val = v;
+    wrap.appendChild(btn);
+  });
+}
+
 function render(){
   const grid = document.getElementById('grid');
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const subField = GENRE_CATEGORIES.includes(activeCategory) ? 'genero' : 'pais';
   const filtered = allItems.filter(item => {
     const matchesCategory = !activeCategory || item.categoria === activeCategory;
     const matchesQuery = !query || (item.titulo || '').toLowerCase().includes(query);
-    return matchesCategory && matchesQuery;
+    const matchesSubFilter = !activeSubFilter || splitField(item[subField]).includes(activeSubFilter);
+    return matchesCategory && matchesQuery && matchesSubFilter;
   });
 
   grid.innerHTML = '';
@@ -312,9 +358,19 @@ document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('categoryChips').addEventListener('click', e => {
   const btn = e.target.closest('.chip');
   if(!btn) return;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#categoryChips .chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
   activeCategory = btn.dataset.cat;
+  activeSubFilter = '';
+  buildSubFilterChips();
+  render();
+});
+document.getElementById('subFilterChips').addEventListener('click', e => {
+  const btn = e.target.closest('.chip');
+  if(!btn) return;
+  document.querySelectorAll('#subFilterChips .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  activeSubFilter = btn.dataset.val;
   render();
 });
 
