@@ -73,8 +73,14 @@
   .badge{display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--accent-soft); color:var(--accent); margin-right:4px;}
   .price{font-weight:700; color:var(--accent); font-size:.95rem; margin-top:auto; margin-bottom:8px;}
   .item-info button{
-    width:100%; padding:10px; font-size:.82rem; font-weight:700; border:none; border-radius:var(--radius-sm);
-    background:linear-gradient(155deg, var(--accent), var(--accent-strong)); color:var(--accent-ink); cursor:pointer;
+    padding:10px; font-size:.8rem; font-weight:700; border:none; border-radius:var(--radius-sm); cursor:pointer;
+  }
+  .btn-row{display:flex; gap:8px;}
+  .btn-row .btn-ficha{
+    flex:1; background:var(--bg-elev); color:var(--text); border:1px solid var(--border) !important;
+  }
+  .btn-row .btn-wsp{
+    flex:1.3; background:linear-gradient(155deg, #25D366, #128C7E); color:#ffffff;
   }
 
   .status{text-align:center; font-size:.88rem; color:var(--muted); padding:30px 10px;}
@@ -102,9 +108,9 @@
   .detail-price{font-size:1.2rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:16px;}
   .modal-card button.btn-primary{
     width:100%; padding:14px; font-size:.95rem; font-weight:700; border:none; border-radius:var(--radius-sm);
-    background:linear-gradient(155deg, var(--accent), var(--accent-strong)); color:var(--accent-ink); cursor:pointer;
+    background:linear-gradient(155deg, #25D366, #128C7E); color:#ffffff; cursor:pointer;
   }
-  .item-card{cursor:pointer;}
+  .item-card img, .item-info .title{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -147,7 +153,7 @@
     <div class="detail-label">Sinopsis</div>
     <p class="detail-sinopsis" id="detailSinopsis"></p>
     <div class="detail-price" id="detailPrice"></div>
-    <button class="btn-primary" id="detailWhatsappBtn">📱 Pedir por WhatsApp</button>
+    <button class="btn-primary" id="detailWhatsappBtn"></button>
   </div>
 </div>
 
@@ -167,6 +173,7 @@ const PLACEHOLDER_POSTER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
 const ICONS = {
   'Película':'🎬', 'Serie':'📺', 'Novela':'🌹', 'Dorama':'🇰🇷', 'Anime':'🎌', 'Animado':'🧸'
 };
+const WHATSAPP_ICON = '<svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor" style="vertical-align:-3px; margin-right:5px;"><path d="M16.004 3C9.38 3 4 8.38 4 15.004c0 2.386.65 4.62 1.78 6.536L4 29l7.633-1.744a11.94 11.94 0 0 0 4.371.826h.005C22.63 28.082 28 22.702 28 16.078 28 9.454 22.628 3 16.004 3zm0 22.2h-.004a9.9 9.9 0 0 1-5.045-1.38l-.362-.215-3.77.93 1.007-3.674-.236-.377a9.89 9.89 0 0 1-1.518-5.28c0-5.472 4.454-9.926 9.932-9.926 2.652 0 5.144 1.034 7.02 2.912a9.86 9.86 0 0 1 2.906 7.018c0 5.472-4.454 9.992-9.93 9.992zm5.448-7.44c-.298-.15-1.764-.87-2.038-.97-.273-.1-.472-.15-.67.15-.199.298-.769.97-.943 1.169-.174.198-.348.223-.646.075-.298-.15-1.257-.463-2.394-1.478-.885-.79-1.483-1.765-1.657-2.063-.174-.298-.019-.459.13-.607.134-.133.298-.347.447-.52.15-.174.199-.298.298-.497.1-.199.05-.373-.025-.522-.075-.149-.67-1.615-.918-2.212-.242-.581-.488-.502-.67-.512-.173-.008-.372-.01-.57-.01a1.09 1.09 0 0 0-.795.373c-.273.298-1.043 1.02-1.043 2.487 0 1.467 1.068 2.884 1.217 3.083.149.198 2.098 3.205 5.083 4.494.71.307 1.264.49 1.696.627.712.226 1.362.194 1.875.118.572-.085 1.764-.72 2.013-1.417.248-.696.248-1.293.174-1.417-.075-.124-.273-.198-.571-.348z"/></svg>';
 
 let allItems = [];
 let activeCategory = '';
@@ -228,11 +235,16 @@ function render(){
         <div class="title">${escapeHtml(item.titulo)}</div>
         <div class="meta"><span class="badge">${icon} ${escapeHtml(item.categoria)}</span>${escapeHtml(item.anio)}</div>
         <div class="price">${item.precio} CUP</div>
-        <button>📱 Pedir por WhatsApp</button>
+        <div class="btn-row">
+          <button class="btn-ficha">🎬 Ver ficha</button>
+          <button class="btn-wsp">${WHATSAPP_ICON}Pedir</button>
+        </div>
       </div>
     `;
-    div.addEventListener('click', () => openDetail(item));
-    div.querySelector('button').addEventListener('click', (e) => { e.stopPropagation(); pedirPorWhatsapp(item); });
+    div.querySelector('img').addEventListener('click', () => openDetail(item));
+    div.querySelector('.title').addEventListener('click', () => openDetail(item));
+    div.querySelector('.btn-ficha').addEventListener('click', () => openDetail(item));
+    div.querySelector('.btn-wsp').addEventListener('click', () => pedirPorWhatsapp(item));
     grid.appendChild(div);
   });
 }
@@ -278,6 +290,7 @@ function openDetail(item){
     videoWrap.innerHTML = '';
   }
 
+  document.getElementById('detailWhatsappBtn').innerHTML = WHATSAPP_ICON + 'Pedir por WhatsApp';
   document.getElementById('detailWhatsappBtn').onclick = () => pedirPorWhatsapp(item);
   document.getElementById('detailModal').classList.remove('hidden');
 }
