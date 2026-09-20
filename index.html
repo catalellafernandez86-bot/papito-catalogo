@@ -69,6 +69,32 @@
 
   .status{text-align:center; font-size:.88rem; color:var(--muted); padding:30px 10px;}
   .hidden{display:none !important;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(6,6,10,.75); display:flex; align-items:flex-end; justify-content:center; z-index:70;}
+  @media (min-width:560px){ .modal-overlay{align-items:center;} }
+  .modal-card{
+    width:100%; max-width:520px; max-height:90vh; overflow-y:auto;
+    background:var(--card); border:1px solid var(--border); border-radius:20px 20px 0 0; padding:20px;
+  }
+  @media (min-width:560px){ .modal-card{border-radius:var(--radius-lg);} }
+  .modal-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .modal-head h2{font-size:1.15rem; margin:0; line-height:1.3;}
+  .close-btn{
+    flex-shrink:0; width:34px; height:34px; border-radius:10px; border:1px solid var(--border);
+    background:var(--bg-elev); color:var(--text); font-size:.9rem; cursor:pointer;
+  }
+  .detail-poster{width:130px; height:195px; object-fit:cover; border-radius:var(--radius-md); display:block; margin:0 auto 16px auto; background:var(--bg-elev);}
+  .detail-meta{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:14px;}
+  .detail-sinopsis{font-size:.9rem; line-height:1.55; color:var(--text); margin-bottom:16px;}
+  .detail-label{font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px;}
+  .video-wrap{position:relative; width:100%; padding-top:56.25%; border-radius:var(--radius-md); overflow:hidden; background:var(--bg-elev); margin-bottom:16px;}
+  .video-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+  .detail-price{font-size:1.2rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:16px;}
+  .modal-card button.btn-primary{
+    width:100%; padding:14px; font-size:.95rem; font-weight:700; border:none; border-radius:var(--radius-sm);
+    background:linear-gradient(155deg, var(--accent), var(--accent-strong)); color:var(--accent-ink); cursor:pointer;
+  }
+  .item-card{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -97,6 +123,22 @@
 
   <p class="status" id="statusMsg">⏳ Cargando catálogo...</p>
   <div class="grid" id="grid"></div>
+</div>
+
+<div class="modal-overlay hidden" id="detailModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="detailTitle"></h2>
+      <button class="close-btn" onclick="closeDetail()">✕</button>
+    </div>
+    <img id="detailPoster" class="detail-poster" src="" alt="Póster">
+    <div class="detail-meta" id="detailMeta"></div>
+    <div id="detailVideoWrap"></div>
+    <div class="detail-label">Sinopsis</div>
+    <p class="detail-sinopsis" id="detailSinopsis"></p>
+    <div class="detail-price" id="detailPrice"></div>
+    <button class="btn-primary" id="detailWhatsappBtn">📱 Pedir por WhatsApp</button>
+  </div>
 </div>
 
 <script>
@@ -179,10 +221,63 @@ function render(){
         <button>📱 Pedir por WhatsApp</button>
       </div>
     `;
-    div.querySelector('button').addEventListener('click', () => pedirPorWhatsapp(item));
+    div.addEventListener('click', () => openDetail(item));
+    div.querySelector('button').addEventListener('click', (e) => { e.stopPropagation(); pedirPorWhatsapp(item); });
     grid.appendChild(div);
   });
 }
+
+function extractYoutubeId(url){
+  if(!url) return null;
+  const patterns = [
+    /youtu\.be\/([A-Za-z0-9_-]{6,})/,
+    /[?&]v=([A-Za-z0-9_-]{6,})/,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/
+  ];
+  for(const p of patterns){
+    const m = url.match(p);
+    if(m) return m[1];
+  }
+  return null;
+}
+
+function openDetail(item){
+  document.getElementById('detailTitle').textContent = item.titulo;
+  document.getElementById('detailPoster').src = item.poster || PLACEHOLDER_POSTER;
+
+  const icon = ICONS[item.categoria] || '🎬';
+  const metaEl = document.getElementById('detailMeta');
+  metaEl.innerHTML = '';
+  [`${icon} ${item.categoria}`, item.anio, item.pais, item.genero, item.formato, item.idioma]
+    .filter(Boolean)
+    .forEach(text => {
+      const span = document.createElement('span');
+      span.className = 'badge';
+      span.textContent = text;
+      metaEl.appendChild(span);
+    });
+
+  document.getElementById('detailSinopsis').textContent = item.sinopsis || 'Sin sinopsis disponible.';
+  document.getElementById('detailPrice').textContent = `${item.precio} CUP`;
+
+  const videoWrap = document.getElementById('detailVideoWrap');
+  const videoId = extractYoutubeId(item.trailer);
+  if(videoId){
+    videoWrap.innerHTML = `<div class="video-wrap"><iframe src="https://www.youtube.com/embed/${videoId}" title="Tráiler" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+  }else{
+    videoWrap.innerHTML = '';
+  }
+
+  document.getElementById('detailWhatsappBtn').onclick = () => pedirPorWhatsapp(item);
+  document.getElementById('detailModal').classList.remove('hidden');
+}
+function closeDetail(){
+  document.getElementById('detailModal').classList.add('hidden');
+  document.getElementById('detailVideoWrap').innerHTML = ''; // detiene el video al cerrar
+}
+document.getElementById('detailModal').addEventListener('click', e => {
+  if(e.target.id === 'detailModal') closeDetail();
+});
 
 function pedirPorWhatsapp(item){
   const texto = `Hola, quiero pedir:\n${item.titulo} (${item.anio}) — ${item.categoria}\nPrecio: ${item.precio} CUP`;
