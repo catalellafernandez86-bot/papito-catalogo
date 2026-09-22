@@ -161,7 +161,6 @@
     </div>
     <img id="detailPoster" class="detail-poster" src="" alt="Póster">
     <div class="detail-meta" id="detailMeta"></div>
-    <p class="hidden" id="detailRating" style="text-align:center; color:var(--accent); font-size:1.05rem; margin:-6px 0 14px 0;"></p>
     <div id="detailVideoWrap"></div>
     <div class="detail-label">Sinopsis</div>
     <p class="detail-sinopsis" id="detailSinopsis"></p>
@@ -188,13 +187,6 @@ const ICONS = {
 };
 const DEFAULT_PRICES = { 'Película':30, 'Serie':20, 'Novela':10, 'Dorama':10, 'Anime':10, 'Animado':5 };
 let categoryPrices = Object.assign({}, DEFAULT_PRICES);
-
-function starRating(vote){
-  const v = Number(vote);
-  if(!v || isNaN(v) || v <= 0) return '';
-  const stars = Math.max(1, Math.min(5, Math.round(v / 2)));
-  return '⭐'.repeat(stars) + '☆'.repeat(5 - stars);
-}
 
 function resolvePrecio(item){
   if(item.precio !== null && item.precio !== undefined && item.precio !== '') return item.precio;
@@ -314,7 +306,6 @@ function render(){
       <div class="item-info">
         <div class="title">${escapeHtml(item.titulo)}</div>
         <div class="meta"><span class="badge">${icon} ${escapeHtml(item.categoria)}</span>${escapeHtml(item.anio)}</div>
-        ${starRating(item.calificacion) ? `<div class="meta" style="margin-top:-4px; color:var(--accent);">${starRating(item.calificacion)}</div>` : ''}
         <div class="price">${resolvePrecio(item)} CUP</div>
         <div class="btn-row">
           <button class="btn-ficha">🎬 Ver ficha</button>
@@ -359,11 +350,6 @@ function openDetail(item){
       span.textContent = text;
       metaEl.appendChild(span);
     });
-
-  const ratingEl = document.getElementById('detailRating');
-  const stars = starRating(item.calificacion);
-  if(stars){ ratingEl.textContent = stars; ratingEl.classList.remove('hidden'); }
-  else{ ratingEl.textContent = ''; ratingEl.classList.add('hidden'); }
 
   document.getElementById('detailSinopsis').textContent = item.sinopsis || 'Sin sinopsis disponible.';
   document.getElementById('detailPrice').textContent = `${resolvePrecio(item)} CUP`;
