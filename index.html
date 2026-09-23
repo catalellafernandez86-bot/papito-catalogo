@@ -157,11 +157,21 @@
 
   .cap-modal-card{width:100%; max-width:380px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px;}
   .cap-modal-title{font-size:1rem; font-weight:700; margin-bottom:4px;}
-  .cap-modal-hint{font-size:.78rem; color:var(--accent); margin-bottom:14px;}
+  .cap-modal-hint{
+    display:inline-block; font-size:.85rem; font-weight:700; color:#22d3ee;
+    background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.35);
+    padding:6px 12px; border-radius:20px; margin-bottom:16px;
+  }
   .cap-modal-card input[type=number]{
     width:100%; background:var(--bg-elev); color:var(--text); border:1px solid var(--border);
     border-radius:var(--radius-sm); padding:13px; font-size:1.1rem; text-align:center; margin-bottom:14px;
   }
+  .btn-confirm-cap{
+    width:100%; padding:13px; background:transparent; color:#22d3ee; border:2px solid #22d3ee;
+    border-radius:var(--radius-sm); font-size:.95rem; font-weight:700; cursor:pointer;
+    box-shadow:0 0 14px rgba(34,211,238,.25);
+  }
+  .btn-confirm-cap:active{background:rgba(34,211,238,.12);}
 </style>
 </head>
 <body>
@@ -237,7 +247,7 @@
     <div class="cap-modal-hint" id="capMaxHint"></div>
     <label style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:6px;">¿Cuántos capítulos deseas?</label>
     <input type="number" id="capInput" min="1" placeholder="Ej: 20">
-    <button class="btn-cart" style="width:100%; padding:13px;" onclick="confirmCapitulos()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>Agregar al pedido</button>
+    <button class="btn-confirm-cap" onclick="confirmCapitulos()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>Agregar al pedido</button>
     <button onclick="closeCapModal()" style="width:100%; padding:11px; margin-top:8px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.82rem; cursor:pointer;">Cancelar</button>
   </div>
 </div>
