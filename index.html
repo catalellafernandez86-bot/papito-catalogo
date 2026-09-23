@@ -45,6 +45,22 @@
   h1{font-family:'Bebas Neue',Georgia,serif; font-size:1.6rem; margin:0; letter-spacing:1.2px;}
   header.top p{margin:2px 0 0 0; font-size:.75rem; color:var(--muted);}
 
+  .cart-btn{
+    position:relative; flex-shrink:0; width:44px; height:44px; border-radius:12px;
+    background:var(--card); border:1px solid var(--border); color:var(--text); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cart-btn:active{background:var(--bg-elev);}
+  .cart-badge{
+    position:absolute; top:-5px; right:-5px; min-width:19px; height:19px; padding:0 4px;
+    border-radius:10px; background:var(--accent); color:var(--accent-ink); font-size:.68rem; font-weight:700;
+    display:flex; align-items:center; justify-content:center; border:2px solid var(--bg);
+  }
+
+  .btn-row .btn-cart{
+    flex:1.3; background:linear-gradient(155deg, var(--accent), var(--accent-strong)); color:var(--accent-ink);
+  }
+
   .toolbar{position:sticky; top:0; background:var(--bg); padding:10px 0 12px 0; z-index:5;}
   input[type=text], select{
     width:100%; background:var(--card); color:var(--text); border:1px solid var(--border);
@@ -112,6 +128,9 @@
     width:100%; padding:14px; font-size:.95rem; font-weight:700; border:none; border-radius:var(--radius-sm);
     background:linear-gradient(155deg, #25D366, #128C7E); color:#ffffff; cursor:pointer;
   }
+  .modal-card button.btn-cart-primary{
+    background:linear-gradient(155deg, var(--accent), var(--accent-strong)); color:var(--accent-ink);
+  }
   .fab-scroll{
     position:fixed; right:18px; bottom:28px; z-index:80;
     width:56px; height:56px; border-radius:50%; border:none; cursor:pointer;
@@ -121,16 +140,42 @@
   }
   .fab-scroll.show{opacity:1; pointer-events:auto; transform:translateY(0);}
   .item-card img, .item-info .title{cursor:pointer;}
+
+  .cart-item{display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border);}
+  .cart-item:last-child{border-bottom:none;}
+  .cart-item-info{flex:1; min-width:0;}
+  .cart-item-title{font-size:.9rem; font-weight:600;}
+  .cart-item-year{color:var(--muted); font-weight:400;}
+  .cart-item-cap{font-size:.78rem; color:var(--accent); margin-top:2px;}
+  .cart-remove{
+    width:30px; height:30px; flex-shrink:0; border-radius:50%; border:1px solid var(--border);
+    background:var(--bg-elev); color:var(--muted); cursor:pointer; font-size:.85rem;
+  }
+  .empty-cart{text-align:center; color:var(--muted); font-size:.88rem; padding:24px 0;}
+  .cart-footer{margin-top:12px; padding-top:14px; border-top:1px solid var(--border);}
+  .cart-count{font-size:.82rem; color:var(--muted); text-align:center; margin-bottom:12px;}
+
+  .cap-modal-card{width:100%; max-width:380px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px;}
+  .cap-modal-title{font-size:1rem; font-weight:700; margin-bottom:4px;}
+  .cap-modal-hint{font-size:.78rem; color:var(--accent); margin-bottom:14px;}
+  .cap-modal-card input[type=number]{
+    width:100%; background:var(--bg-elev); color:var(--text); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:13px; font-size:1.1rem; text-align:center; margin-bottom:14px;
+  }
 </style>
 </head>
 <body>
 
 <header class="top">
   <div class="brand-mark">🎬</div>
-  <div>
+  <div style="flex:1; min-width:0;">
     <h1>PAPITO-PC</h1>
     <p>Catálogo de AudioVisuales</p>
   </div>
+  <button class="cart-btn" id="cartBtn" onclick="openCart()">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+    <span class="cart-badge hidden" id="cartBadge">0</span>
+  </button>
 </header>
 
 <div class="wrap">
@@ -169,6 +214,34 @@
   </div>
 </div>
 
+<!-- MODAL: CARRITO / PEDIDO -->
+<div class="modal-overlay hidden" id="cartModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>🛒 Tu pedido</h2>
+      <button class="close-btn" onclick="closeCart()">✕</button>
+    </div>
+    <div id="cartList"></div>
+    <div class="cart-footer">
+      <div class="cart-count" id="cartCount"></div>
+      <button class="btn-wsp" id="sendCartBtn" onclick="sendCartWhatsapp()"></button>
+      <button class="btn-secondary-outline" id="clearCartBtn" onclick="clearCart()" style="margin-top:8px; width:100%; padding:12px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.82rem; cursor:pointer;">Vaciar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CUÁNTOS CAPÍTULOS -->
+<div class="modal-overlay hidden" id="capModal">
+  <div class="cap-modal-card">
+    <div class="cap-modal-title" id="capTitulo"></div>
+    <div class="cap-modal-hint" id="capMaxHint"></div>
+    <label style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:6px;">¿Cuántos capítulos deseas?</label>
+    <input type="number" id="capInput" min="1" placeholder="Ej: 20">
+    <button class="btn-cart" style="width:100%; padding:13px;" onclick="confirmCapitulos()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>Agregar al pedido</button>
+    <button onclick="closeCapModal()" style="width:100%; padding:11px; margin-top:8px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.82rem; cursor:pointer;">Cancelar</button>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    Catálogo público — AudioVisuales PAPITO-PC (solo lectura)
@@ -193,6 +266,11 @@ function resolvePrecio(item){
   return categoryPrices[item.categoria] ?? DEFAULT_PRICES[item.categoria] ?? 0;
 }
 const WHATSAPP_ICON = '<svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor" style="vertical-align:-3px; margin-right:5px;"><path d="M16.004 3C9.38 3 4 8.38 4 15.004c0 2.386.65 4.62 1.78 6.536L4 29l7.633-1.744a11.94 11.94 0 0 0 4.371.826h.005C22.63 28.082 28 22.702 28 16.078 28 9.454 22.628 3 16.004 3zm0 22.2h-.004a9.9 9.9 0 0 1-5.045-1.38l-.362-.215-3.77.93 1.007-3.674-.236-.377a9.89 9.89 0 0 1-1.518-5.28c0-5.472 4.454-9.926 9.932-9.926 2.652 0 5.144 1.034 7.02 2.912a9.86 9.86 0 0 1 2.906 7.018c0 5.472-4.454 9.992-9.93 9.992zm5.448-7.44c-.298-.15-1.764-.87-2.038-.97-.273-.1-.472-.15-.67.15-.199.298-.769.97-.943 1.169-.174.198-.348.223-.646.075-.298-.15-1.257-.463-2.394-1.478-.885-.79-1.483-1.765-1.657-2.063-.174-.298-.019-.459.13-.607.134-.133.298-.347.447-.52.15-.174.199-.298.298-.497.1-.199.05-.373-.025-.522-.075-.149-.67-1.615-.918-2.212-.242-.581-.488-.502-.67-.512-.173-.008-.372-.01-.57-.01a1.09 1.09 0 0 0-.795.373c-.273.298-1.043 1.02-1.043 2.487 0 1.467 1.068 2.884 1.217 3.083.149.198 2.098 3.205 5.083 4.494.71.307 1.264.49 1.696.627.712.226 1.362.194 1.875.118.572-.085 1.764-.72 2.013-1.417.248-.696.248-1.293.174-1.417-.075-.124-.273-.198-.571-.348z"/></svg>';
+const CART_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>';
+const EPISODIC_CATEGORIES = ['Serie', 'Novela', 'Dorama', 'Anime'];
+
+let cart = [];
+let pendingCapItem = null;
 
 let allItems = [];
 let fabObserver = null;
@@ -309,14 +387,14 @@ function render(){
         <div class="price">${resolvePrecio(item)} CUP</div>
         <div class="btn-row">
           <button class="btn-ficha">🎬 Ver ficha</button>
-          <button class="btn-wsp">${WHATSAPP_ICON}Pedir</button>
+          <button class="btn-cart">${CART_ICON}Agregar</button>
         </div>
       </div>
     `;
     div.querySelector('img').addEventListener('click', () => openDetail(item));
     div.querySelector('.title').addEventListener('click', () => openDetail(item));
     div.querySelector('.btn-ficha').addEventListener('click', () => openDetail(item));
-    div.querySelector('.btn-wsp').addEventListener('click', () => pedirPorWhatsapp(item));
+    div.querySelector('.btn-cart').addEventListener('click', () => handleAddToCart(item));
     grid.appendChild(div);
   });
 }
@@ -350,6 +428,12 @@ function openDetail(item){
       span.textContent = text;
       metaEl.appendChild(span);
     });
+  if(EPISODIC_CATEGORIES.includes(item.categoria) && item.capitulos){
+    const span = document.createElement('span');
+    span.className = 'badge';
+    span.textContent = `📀 ${item.capitulos} capítulos disponibles`;
+    metaEl.appendChild(span);
+  }
 
   document.getElementById('detailSinopsis').textContent = item.sinopsis || 'Sin sinopsis disponible.';
   document.getElementById('detailPrice').textContent = `${resolvePrecio(item)} CUP`;
@@ -362,8 +446,10 @@ function openDetail(item){
     videoWrap.innerHTML = '';
   }
 
-  document.getElementById('detailWhatsappBtn').innerHTML = WHATSAPP_ICON + 'Pedir por WhatsApp';
-  document.getElementById('detailWhatsappBtn').onclick = () => pedirPorWhatsapp(item);
+  const wspBtn = document.getElementById('detailWhatsappBtn');
+  wspBtn.className = 'btn-primary btn-cart-primary';
+  wspBtn.innerHTML = CART_ICON + 'Agregar al pedido';
+  wspBtn.onclick = () => handleAddToCart(item);
   document.getElementById('detailModal').classList.remove('hidden');
 
   if(!modalOpenViaHistory){
@@ -401,11 +487,153 @@ document.getElementById('detailModal').addEventListener('click', e => {
   if(e.target.id === 'detailModal') closeDetail();
 });
 
-function pedirPorWhatsapp(item){
-  const texto = `Hola, quiero pedir:\n${item.titulo} (${item.anio}) — ${item.categoria}\nPrecio: ${resolvePrecio(item)} CUP`;
+/* ---------- CARRITO / PEDIDO ---------- */
+
+function loadCart(){
+  try{
+    const raw = localStorage.getItem('papito_cart');
+    cart = raw ? JSON.parse(raw) : [];
+  }catch(e){ cart = []; }
+}
+function saveCart(){
+  try{ localStorage.setItem('papito_cart', JSON.stringify(cart)); }catch(e){}
+}
+function updateCartBadge(){
+  const badge = document.getElementById('cartBadge');
+  if(cart.length > 0){
+    badge.textContent = cart.length;
+    badge.classList.remove('hidden');
+  }else{
+    badge.classList.add('hidden');
+  }
+}
+
+function handleAddToCart(item){
+  const existing = cart.find(c => c.id === item.id);
+  if(EPISODIC_CATEGORIES.includes(item.categoria)){
+    openCapitulosPrompt(item, existing);
+    return;
+  }
+  if(existing){
+    showToast('Ya está en tu pedido.');
+    return;
+  }
+  cart.push({ id:item.id, titulo:item.titulo, categoria:item.categoria, anio:item.anio, capitulosDeseados:null });
+  saveCart();
+  updateCartBadge();
+  showToast('✓ Agregado al pedido');
+}
+
+function openCapitulosPrompt(item, existing){
+  pendingCapItem = item;
+  document.getElementById('capTitulo').textContent = item.titulo;
+  document.getElementById('capMaxHint').textContent = item.capitulos ? `Disponibles: ${item.capitulos} capítulos` : '';
+  document.getElementById('capInput').value = existing && existing.capitulosDeseados ? existing.capitulosDeseados : '';
+  document.getElementById('capModal').classList.remove('hidden');
+}
+function closeCapModal(){
+  document.getElementById('capModal').classList.add('hidden');
+  pendingCapItem = null;
+}
+function confirmCapitulos(){
+  if(!pendingCapItem) return;
+  const val = document.getElementById('capInput').value.trim();
+  const n = val ? parseInt(val, 10) : null;
+  const item = pendingCapItem;
+  const idx = cart.findIndex(c => c.id === item.id);
+  const entry = { id:item.id, titulo:item.titulo, categoria:item.categoria, anio:item.anio, capitulosDeseados:n };
+  if(idx >= 0) cart[idx] = entry; else cart.push(entry);
+  saveCart();
+  updateCartBadge();
+  closeCapModal();
+  showToast('✓ Agregado al pedido');
+}
+
+function openCart(){
+  renderCartPanel();
+  document.getElementById('cartModal').classList.remove('hidden');
+}
+function closeCart(){
+  document.getElementById('cartModal').classList.add('hidden');
+}
+function renderCartPanel(){
+  const list = document.getElementById('cartList');
+  const countEl = document.getElementById('cartCount');
+  const sendBtn = document.getElementById('sendCartBtn');
+  list.innerHTML = '';
+  if(cart.length === 0){
+    list.innerHTML = '<p class="empty-cart">Tu pedido está vacío. Agrega títulos desde el catálogo.</p>';
+    countEl.textContent = '';
+    sendBtn.classList.add('hidden');
+    document.getElementById('clearCartBtn').classList.add('hidden');
+    return;
+  }
+  sendBtn.classList.remove('hidden');
+  document.getElementById('clearCartBtn').classList.remove('hidden');
+  sendBtn.innerHTML = WHATSAPP_ICON + 'Enviar pedido por WhatsApp';
+  countEl.textContent = cart.length === 1 ? '1 título en tu pedido' : `${cart.length} títulos en tu pedido`;
+  cart.forEach(c => {
+    const icon = ICONS[c.categoria] || '🎬';
+    const div = document.createElement('div');
+    div.className = 'cart-item';
+    div.innerHTML = `
+      <div class="cart-item-info">
+        <div class="cart-item-title">${icon} ${escapeHtml(c.titulo)} <span class="cart-item-year">(${escapeHtml(c.anio)})</span></div>
+        ${c.capitulosDeseados ? `<div class="cart-item-cap">${c.capitulosDeseados} capítulos</div>` : ''}
+      </div>
+      <button class="cart-remove">✕</button>
+    `;
+    div.querySelector('.cart-remove').addEventListener('click', () => {
+      cart = cart.filter(x => x.id !== c.id);
+      saveCart();
+      updateCartBadge();
+      renderCartPanel();
+    });
+    list.appendChild(div);
+  });
+}
+function clearCart(){
+  cart = [];
+  saveCart();
+  updateCartBadge();
+  renderCartPanel();
+}
+function sendCartWhatsapp(){
+  if(cart.length === 0) return;
+  const lines = ['Hola, quiero pedir:', ''];
+  cart.forEach(c => {
+    const icon = ICONS[c.categoria] || '🎬';
+    let line = `${icon} ${c.titulo} (${c.anio})`;
+    if(c.capitulosDeseados) line += ` — ${c.capitulosDeseados} capítulos`;
+    lines.push(line);
+  });
+  lines.push('');
+  lines.push('¡Gracias!');
+  const texto = lines.join('\n');
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(texto)}`;
   window.location.href = url;
 }
+
+function showToast(msg){
+  let toast = document.getElementById('miniToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'miniToast';
+    toast.style.cssText = 'position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--card); color:var(--text); padding:10px 18px; border-radius:30px; font-size:.85rem; border:1px solid var(--border); z-index:90; opacity:0; transition:opacity .25s ease; pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+}
+
+document.getElementById('capModal').addEventListener('click', e => {
+  if(e.target.id === 'capModal') closeCapModal();
+});
+document.getElementById('cartModal').addEventListener('click', e => {
+  if(e.target.id === 'cartModal') closeCart();
+});
 
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('categoryChips').addEventListener('click', e => {
@@ -427,6 +655,8 @@ document.getElementById('subFilterChips').addEventListener('click', e => {
   render();
 });
 
+loadCart();
+updateCartBadge();
 loadCatalog();
 </script>
 </body>
