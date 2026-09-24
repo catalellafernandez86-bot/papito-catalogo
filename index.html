@@ -87,6 +87,18 @@
   .item-info .title{font-weight:700; font-size:.95rem; line-height:1.25;}
   .item-info .meta{font-size:.78rem; color:var(--muted); margin:3px 0 8px 0;}
   .badge{display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--accent-soft); color:var(--accent); margin-right:4px;}
+
+  .register-gate{
+    position:fixed; inset:0; z-index:100; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .register-card{width:100%; max-width:360px;}
+  .register-card label{display:block; font-size:.78rem; color:var(--muted); margin:0 0 6px 2px;}
+  .register-card input{
+    width:100%; background:var(--card); color:var(--text); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:13px; font-size:.95rem; margin-bottom:14px; font-family:inherit;
+  }
+  .register-card input:focus{outline:none; border-color:var(--accent);}
   .price{font-weight:700; color:var(--accent); font-size:.95rem; margin-top:auto; margin-bottom:8px;}
   .item-info button{
     padding:10px; font-size:.8rem; font-weight:700; border:none; border-radius:var(--radius-sm); cursor:pointer;
@@ -133,11 +145,12 @@
   }
   .fab-scroll{
     position:fixed; right:18px; bottom:28px; z-index:80;
-    width:56px; height:56px; border-radius:50%; border:none; cursor:pointer;
-    background:linear-gradient(155deg, #a78bda, #8467c4); color:#fff; font-size:1.4rem; font-weight:700;
-    box-shadow:0 6px 18px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center;
+    width:56px; height:56px; border-radius:50%; cursor:pointer;
+    background:rgba(167,139,218,.12); border:2px solid #a78bda; color:#c9b6f0; font-size:1.4rem; font-weight:700;
+    box-shadow:0 0 16px rgba(167,139,218,.35); display:flex; align-items:center; justify-content:center;
     opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .2s ease, transform .2s ease;
   }
+  .fab-scroll:active{background:rgba(167,139,218,.25);}
   .fab-scroll.show{opacity:1; pointer-events:auto; transform:translateY(0);}
   .item-card img, .item-info .title{cursor:pointer;}
 
@@ -153,6 +166,12 @@
   }
   .empty-cart{text-align:center; color:var(--muted); font-size:.88rem; padding:24px 0;}
   .cart-footer{margin-top:12px; padding-top:14px; border-top:1px solid var(--border);}
+  .cart-footer .btn-wsp{padding:16px; font-size:1rem;}
+  .btn-clear-cart{
+    width:100%; padding:15px; margin-top:10px; background:transparent; color:#f87171;
+    border:2px solid #f87171; border-radius:var(--radius-sm); font-size:.9rem; font-weight:700; cursor:pointer;
+  }
+  .btn-clear-cart:active{background:rgba(248,113,113,.12);}
   .cart-count{font-size:.82rem; color:var(--muted); text-align:center; margin-bottom:12px;}
 
   .cap-modal-card{width:100%; max-width:380px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px;}
@@ -175,6 +194,20 @@
 </style>
 </head>
 <body>
+
+<div class="register-gate" id="registerGate">
+  <div class="register-card">
+    <div class="brand-mark" style="margin:0 auto 16px auto;">🎬</div>
+    <h2 style="text-align:center; margin:0 0 4px 0;">Bienvenido</h2>
+    <p style="text-align:center; color:var(--muted); font-size:.85rem; margin:0 0 20px 0;">Regístrate para ver el catálogo de AudioVisuales PAPITO-PC.</p>
+    <label>Nombre</label>
+    <input type="text" id="regNombre" placeholder="Tu nombre" autocomplete="off">
+    <label>Número de teléfono</label>
+    <input type="tel" id="regTelefono" placeholder="Ej: 53412345" autocomplete="off">
+    <button class="btn-wsp" onclick="submitRegistration()" style="margin-top:6px;">Continuar</button>
+    <div class="status" id="regStatus"></div>
+  </div>
+</div>
 
 <header class="top">
   <div class="brand-mark">🎬</div>
@@ -233,9 +266,8 @@
     </div>
     <div id="cartList"></div>
     <div class="cart-footer">
-      <div class="cart-count" id="cartCount"></div>
       <button class="btn-wsp" id="sendCartBtn" onclick="sendCartWhatsapp()"></button>
-      <button class="btn-secondary-outline" id="clearCartBtn" onclick="clearCart()" style="margin-top:8px; width:100%; padding:12px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.82rem; cursor:pointer;">Vaciar pedido</button>
+      <button class="btn-clear-cart" id="clearCartBtn" onclick="clearCart()">Vaciar pedido</button>
     </div>
   </div>
 </div>
@@ -281,6 +313,7 @@ const EPISODIC_CATEGORIES = ['Serie', 'Novela', 'Dorama', 'Anime'];
 
 let cart = [];
 let pendingCapItem = null;
+let clienteInfo = null;
 
 let allItems = [];
 let fabObserver = null;
@@ -497,6 +530,44 @@ document.getElementById('detailModal').addEventListener('click', e => {
   if(e.target.id === 'detailModal') closeDetail();
 });
 
+/* ---------- REGISTRO OBLIGATORIO ---------- */
+
+function checkRegistration(){
+  try{
+    const raw = localStorage.getItem('papito_cliente');
+    if(raw){
+      const data = JSON.parse(raw);
+      if(data && data.nombre && data.telefono){
+        clienteInfo = data;
+        return true;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+
+async function submitRegistration(){
+  const nombre = document.getElementById('regNombre').value.trim();
+  const telefono = document.getElementById('regTelefono').value.trim();
+  const statusEl = document.getElementById('regStatus');
+  if(!nombre || !telefono){
+    statusEl.textContent = '❌ Completa tu nombre y número.';
+    statusEl.className = 'status err';
+    return;
+  }
+  clienteInfo = { nombre, telefono };
+  try{ localStorage.setItem('papito_cliente', JSON.stringify(clienteInfo)); }catch(e){}
+  document.getElementById('registerGate').classList.add('hidden');
+
+  try{
+    if(supabaseClient){
+      await supabaseClient.from('clientes').insert({ nombre, telefono });
+    }
+  }catch(e){
+    console.warn('No se pudo guardar el registro en Supabase:', e);
+  }
+}
+
 /* ---------- CARRITO / PEDIDO ---------- */
 
 function loadCart(){
@@ -568,12 +639,10 @@ function closeCart(){
 }
 function renderCartPanel(){
   const list = document.getElementById('cartList');
-  const countEl = document.getElementById('cartCount');
   const sendBtn = document.getElementById('sendCartBtn');
   list.innerHTML = '';
   if(cart.length === 0){
     list.innerHTML = '<p class="empty-cart">Tu pedido está vacío. Agrega títulos desde el catálogo.</p>';
-    countEl.textContent = '';
     sendBtn.classList.add('hidden');
     document.getElementById('clearCartBtn').classList.add('hidden');
     return;
@@ -581,7 +650,6 @@ function renderCartPanel(){
   sendBtn.classList.remove('hidden');
   document.getElementById('clearCartBtn').classList.remove('hidden');
   sendBtn.innerHTML = WHATSAPP_ICON + 'Enviar pedido por WhatsApp';
-  countEl.textContent = cart.length === 1 ? '1 título en tu pedido' : `${cart.length} títulos en tu pedido`;
   cart.forEach(c => {
     const icon = ICONS[c.categoria] || '🎬';
     const div = document.createElement('div');
@@ -610,7 +678,13 @@ function clearCart(){
 }
 function sendCartWhatsapp(){
   if(cart.length === 0) return;
-  const lines = ['Hola, quiero pedir:', ''];
+  const lines = [];
+  if(clienteInfo && clienteInfo.nombre){
+    lines.push(`Hola, soy ${clienteInfo.nombre} (${clienteInfo.telefono}).`);
+    lines.push('Quiero pedir:', '');
+  }else{
+    lines.push('Hola, quiero pedir:', '');
+  }
   cart.forEach(c => {
     const icon = ICONS[c.categoria] || '🎬';
     let line = `${icon} ${c.titulo} (${c.anio})`;
@@ -665,6 +739,9 @@ document.getElementById('subFilterChips').addEventListener('click', e => {
   render();
 });
 
+if(checkRegistration()){
+  document.getElementById('registerGate').classList.add('hidden');
+}
 loadCart();
 updateCartBadge();
 loadCatalog();
