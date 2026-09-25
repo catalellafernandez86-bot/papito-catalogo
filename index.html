@@ -303,9 +303,18 @@ const ICONS = {
 const DEFAULT_PRICES = { 'Película':30, 'Serie':20, 'Novela':10, 'Dorama':10, 'Anime':10, 'Animado':5 };
 let categoryPrices = Object.assign({}, DEFAULT_PRICES);
 
+// Un Dorama se guarda como categoria='Serie' + es_dorama=true (siempre pertenece también a Series).
+function itemInCategory(item, cat){
+  if(cat === 'Dorama') return item.categoria === 'Serie' && !!item.es_dorama;
+  return item.categoria === cat;
+}
+function displayCategoria(item){
+  return (item.categoria === 'Serie' && item.es_dorama) ? 'Dorama' : item.categoria;
+}
 function resolvePrecio(item){
   if(item.precio !== null && item.precio !== undefined && item.precio !== '') return item.precio;
-  return categoryPrices[item.categoria] ?? DEFAULT_PRICES[item.categoria] ?? 0;
+  const cat = displayCategoria(item);
+  return categoryPrices[cat] ?? DEFAULT_PRICES[cat] ?? 0;
 }
 const WHATSAPP_ICON = '<svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor" style="vertical-align:-3px; margin-right:5px;"><path d="M16.004 3C9.38 3 4 8.38 4 15.004c0 2.386.65 4.62 1.78 6.536L4 29l7.633-1.744a11.94 11.94 0 0 0 4.371.826h.005C22.63 28.082 28 22.702 28 16.078 28 9.454 22.628 3 16.004 3zm0 22.2h-.004a9.9 9.9 0 0 1-5.045-1.38l-.362-.215-3.77.93 1.007-3.674-.236-.377a9.89 9.89 0 0 1-1.518-5.28c0-5.472 4.454-9.926 9.932-9.926 2.652 0 5.144 1.034 7.02 2.912a9.86 9.86 0 0 1 2.906 7.018c0 5.472-4.454 9.992-9.93 9.992zm5.448-7.44c-.298-.15-1.764-.87-2.038-.97-.273-.1-.472-.15-.67.15-.199.298-.769.97-.943 1.169-.174.198-.348.223-.646.075-.298-.15-1.257-.463-2.394-1.478-.885-.79-1.483-1.765-1.657-2.063-.174-.298-.019-.459.13-.607.134-.133.298-.347.447-.52.15-.174.199-.298.298-.497.1-.199.05-.373-.025-.522-.075-.149-.67-1.615-.918-2.212-.242-.581-.488-.502-.67-.512-.173-.008-.372-.01-.57-.01a1.09 1.09 0 0 0-.795.373c-.273.298-1.043 1.02-1.043 2.487 0 1.467 1.068 2.884 1.217 3.083.149.198 2.098 3.205 5.083 4.494.71.307 1.264.49 1.696.627.712.226 1.362.194 1.875.118.572-.085 1.764-.72 2.013-1.417.248-.696.248-1.293.174-1.417-.075-.124-.273-.198-.571-.348z"/></svg>';
 const CART_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>';
@@ -371,7 +380,7 @@ function buildSubFilterChips(){
     return;
   }
 
-  const byCategory = allItems.filter(item => item.categoria === activeCategory);
+  const byCategory = allItems.filter(item => itemInCategory(item, activeCategory));
   const field = GENRE_CATEGORIES.includes(activeCategory) ? 'genero' : 'pais';
   const values = new Set();
   byCategory.forEach(item => splitField(item[field]).forEach(v => values.add(v)));
@@ -402,7 +411,7 @@ function render(){
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
   const subField = GENRE_CATEGORIES.includes(activeCategory) ? 'genero' : 'pais';
   const filtered = allItems.filter(item => {
-    const matchesCategory = !activeCategory || item.categoria === activeCategory;
+    const matchesCategory = !activeCategory || itemInCategory(item, activeCategory);
     const matchesQuery = !query || (item.titulo || '').toLowerCase().includes(query);
     const matchesSubFilter = !activeSubFilter || splitField(item[subField]).includes(activeSubFilter);
     return matchesCategory && matchesQuery && matchesSubFilter;
@@ -419,14 +428,15 @@ function render(){
 
   filtered.forEach(item => {
     const poster = item.poster || PLACEHOLDER_POSTER;
-    const icon = ICONS[item.categoria] || '🎬';
+    const icon = ICONS[displayCategoria(item)] || '🎬';
+    const etiqueta = item.categoria === 'Serie' && item.es_dorama ? 'Serie · Dorama' : item.categoria;
     const div = document.createElement('div');
     div.className = 'item-card';
     div.innerHTML = `
       <img src="${poster}" alt="Póster">
       <div class="item-info">
         <div class="title">${escapeHtml(item.titulo)}</div>
-        <div class="meta"><span class="badge">${icon} ${escapeHtml(item.categoria)}</span>${escapeHtml(item.anio)}</div>
+        <div class="meta"><span class="badge">${icon} ${escapeHtml(etiqueta)}</span>${escapeHtml(item.anio)}</div>
         <div class="price">${resolvePrecio(item)} CUP</div>
         <div class="btn-row">
           <button class="btn-ficha">🎬 Ver ficha</button>
@@ -460,10 +470,11 @@ function openDetail(item){
   document.getElementById('detailTitle').textContent = item.titulo;
   document.getElementById('detailPoster').src = item.poster || PLACEHOLDER_POSTER;
 
-  const icon = ICONS[item.categoria] || '🎬';
+  const icon = ICONS[displayCategoria(item)] || '🎬';
+  const etiquetaCategoria = item.categoria === 'Serie' && item.es_dorama ? 'Serie · Dorama' : item.categoria;
   const metaEl = document.getElementById('detailMeta');
   metaEl.innerHTML = '';
-  [`${icon} ${item.categoria}`, item.anio, item.pais, item.genero, item.formato, item.idioma]
+  [`${icon} ${etiquetaCategoria}`, item.anio, item.pais, item.genero, item.formato, item.idioma]
     .filter(Boolean)
     .forEach(text => {
       const span = document.createElement('span');
