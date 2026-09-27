@@ -319,6 +319,12 @@ function resolvePrecio(item){
 const WHATSAPP_ICON = '<svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor" style="vertical-align:-3px; margin-right:5px;"><path d="M16.004 3C9.38 3 4 8.38 4 15.004c0 2.386.65 4.62 1.78 6.536L4 29l7.633-1.744a11.94 11.94 0 0 0 4.371.826h.005C22.63 28.082 28 22.702 28 16.078 28 9.454 22.628 3 16.004 3zm0 22.2h-.004a9.9 9.9 0 0 1-5.045-1.38l-.362-.215-3.77.93 1.007-3.674-.236-.377a9.89 9.89 0 0 1-1.518-5.28c0-5.472 4.454-9.926 9.932-9.926 2.652 0 5.144 1.034 7.02 2.912a9.86 9.86 0 0 1 2.906 7.018c0 5.472-4.454 9.992-9.93 9.992zm5.448-7.44c-.298-.15-1.764-.87-2.038-.97-.273-.1-.472-.15-.67.15-.199.298-.769.97-.943 1.169-.174.198-.348.223-.646.075-.298-.15-1.257-.463-2.394-1.478-.885-.79-1.483-1.765-1.657-2.063-.174-.298-.019-.459.13-.607.134-.133.298-.347.447-.52.15-.174.199-.298.298-.497.1-.199.05-.373-.025-.522-.075-.149-.67-1.615-.918-2.212-.242-.581-.488-.502-.67-.512-.173-.008-.372-.01-.57-.01a1.09 1.09 0 0 0-.795.373c-.273.298-1.043 1.02-1.043 2.487 0 1.467 1.068 2.884 1.217 3.083.149.198 2.098 3.205 5.083 4.494.71.307 1.264.49 1.696.627.712.226 1.362.194 1.875.118.572-.085 1.764-.72 2.013-1.417.248-.696.248-1.293.174-1.417-.075-.124-.273-.198-.571-.348z"/></svg>';
 const CART_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>';
 const EPISODIC_CATEGORIES = ['Serie', 'Novela', 'Dorama', 'Anime'];
+function isEpisodic(item){
+  if(EPISODIC_CATEGORIES.includes(item.categoria)) return true;
+  // Un Animado puede ser serie o película — solo cuenta si es serie de verdad.
+  if(item.categoria === 'Animado' && item.media_type === 'tv') return true;
+  return false;
+}
 
 let cart = [];
 let pendingCapItem = null;
@@ -336,6 +342,12 @@ const COUNTRY_CATEGORIES = ['Novela', 'Dorama'];
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// Convierte una calificación 0-10 de TMDB a estrellas sobre 5.
+function ratingStars(rating){
+  if(rating === null || rating === undefined || rating === '') return '';
+  const n = Math.max(0, Math.min(5, Math.round((Number(rating)/10)*5)));
+  return '★'.repeat(n) + '☆'.repeat(5-n);
 }
 
 async function loadCatalog(){
@@ -436,7 +448,7 @@ function render(){
       <img src="${poster}" alt="Póster">
       <div class="item-info">
         <div class="title">${escapeHtml(item.titulo)}</div>
-        <div class="meta"><span class="badge">${icon} ${escapeHtml(etiqueta)}</span>${escapeHtml(item.anio)}</div>
+        <div class="meta"><span class="badge">${icon} ${escapeHtml(etiqueta)}</span>${escapeHtml(item.anio)}${item.rating ? ' · <span style="color:var(--accent)">' + ratingStars(item.rating) + '</span>' : ''}</div>
         <div class="price">${resolvePrecio(item)} CUP</div>
         <div class="btn-row">
           <button class="btn-ficha">🎬 Ver ficha</button>
@@ -482,10 +494,16 @@ function openDetail(item){
       span.textContent = text;
       metaEl.appendChild(span);
     });
-  if(EPISODIC_CATEGORIES.includes(item.categoria) && item.capitulos){
+  if(isEpisodic(item) && item.capitulos){
     const span = document.createElement('span');
     span.className = 'badge';
     span.textContent = `📀 ${item.capitulos} capítulos disponibles`;
+    metaEl.appendChild(span);
+  }
+  if(item.rating){
+    const span = document.createElement('span');
+    span.className = 'badge';
+    span.textContent = `${ratingStars(item.rating)} ${Number(item.rating).toFixed(1)}/10`;
     metaEl.appendChild(span);
   }
 
@@ -602,7 +620,7 @@ function updateCartBadge(){
 
 function handleAddToCart(item){
   const existing = cart.find(c => c.id === item.id);
-  if(EPISODIC_CATEGORIES.includes(item.categoria)){
+  if(isEpisodic(item)){
     openCapitulosPrompt(item, existing);
     return;
   }
