@@ -748,7 +748,13 @@ document.getElementById('cartModal').addEventListener('click', e => {
   if(e.target.id === 'cartModal') closeCart();
 });
 
-document.getElementById('searchInput').addEventListener('input', render);
+// Al cambiar de categoría, subfiltro o búsqueda, la lista nueva empieza desde arriba
+// (si no, el navegador conserva la altura de scroll de la lista anterior).
+function renderFromTop(){
+  render();
+  window.scrollTo(0, 0);
+}
+document.getElementById('searchInput').addEventListener('input', renderFromTop);
 document.getElementById('categoryChips').addEventListener('click', e => {
   const btn = e.target.closest('.chip');
   if(!btn) return;
@@ -757,7 +763,7 @@ document.getElementById('categoryChips').addEventListener('click', e => {
   activeCategory = btn.dataset.cat;
   activeSubFilter = '';
   buildSubFilterChips();
-  render();
+  renderFromTop();
 });
 document.getElementById('subFilterChips').addEventListener('click', e => {
   const btn = e.target.closest('.chip');
@@ -765,7 +771,7 @@ document.getElementById('subFilterChips').addEventListener('click', e => {
   document.querySelectorAll('#subFilterChips .chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
   activeSubFilter = btn.dataset.val;
-  render();
+  renderFromTop();
 });
 
 if(checkRegistration()){
