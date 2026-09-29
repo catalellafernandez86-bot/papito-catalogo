@@ -77,6 +77,12 @@
   .chip-estrenos{color:#ff8a65; border-color:rgba(255,138,101,.35);}
   .chip-estrenos.active{background:rgba(255,138,101,.15); color:#ff8a65; border-color:rgba(255,138,101,.55);}
   .estreno-tag{display:inline-block; font-size:.68rem; font-weight:800; color:#ff8a65; letter-spacing:.3px; vertical-align:middle;}
+  .category-section{margin-bottom:22px;}
+  .category-heading{
+    font-family:'Bebas Neue',Georgia,serif; font-size:1.15rem; letter-spacing:.6px;
+    color:var(--accent); margin:0 0 10px 2px; padding-top:4px; border-top:1px solid var(--border);
+  }
+  .category-section:first-child .category-heading{border-top:none; padding-top:0;}
 
   .grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:8px;}
   @media (min-width:520px){ .grid{grid-template-columns:1fr 1fr;} }
@@ -425,6 +431,39 @@ function buildSubFilterChips(){
   });
 }
 
+const CATEGORY_ORDER = [
+  { cat:'Película', label:'🎬 Películas' },
+  { cat:'Serie', label:'📺 Series' },
+  { cat:'Novela', label:'🌹 Novelas' },
+  { cat:'Anime', label:'🎌 Animes' },
+  { cat:'Animado', label:'🧸 Animados' }
+];
+
+function buildItemCard(item){
+  const poster = item.poster || PLACEHOLDER_POSTER;
+  const icon = ICONS[displayCategoria(item)] || '🎬';
+  const etiqueta = item.categoria === 'Serie' && item.es_dorama ? 'Serie · Dorama' : item.categoria;
+  const div = document.createElement('div');
+  div.className = 'item-card';
+  div.innerHTML = `
+    <img src="${poster}" alt="Póster">
+    <div class="item-info">
+      <div class="title">${escapeHtml(item.titulo)}${isEstreno(item) ? ' <span class="estreno-tag">‼️ESTRENO‼️</span>' : ''}</div>
+      <div class="meta"><span class="badge">${icon} ${escapeHtml(etiqueta)}</span>${escapeHtml(item.anio)}${item.rating ? ' · <span style="color:var(--accent)">' + ratingStars(item.rating) + '</span>' : ''}</div>
+      <div class="price">${resolvePrecio(item)} CUP</div>
+      <div class="btn-row">
+        <button class="btn-ficha">🎬 Ver ficha</button>
+        <button class="btn-cart">${CART_ICON}Agregar</button>
+      </div>
+    </div>
+  `;
+  div.querySelector('img').addEventListener('click', () => openDetail(item));
+  div.querySelector('.title').addEventListener('click', () => openDetail(item));
+  div.querySelector('.btn-ficha').addEventListener('click', () => openDetail(item));
+  div.querySelector('.btn-cart').addEventListener('click', () => handleAddToCart(item));
+  return div;
+}
+
 function render(){
   const grid = document.getElementById('grid');
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -445,30 +484,27 @@ function render(){
   }
   statusEl.classList.add('hidden');
 
-  filtered.forEach(item => {
-    const poster = item.poster || PLACEHOLDER_POSTER;
-    const icon = ICONS[displayCategoria(item)] || '🎬';
-    const etiqueta = item.categoria === 'Serie' && item.es_dorama ? 'Serie · Dorama' : item.categoria;
-    const div = document.createElement('div');
-    div.className = 'item-card';
-    div.innerHTML = `
-      <img src="${poster}" alt="Póster">
-      <div class="item-info">
-        <div class="title">${escapeHtml(item.titulo)}${isEstreno(item) ? ' <span class="estreno-tag">‼️ESTRENO‼️</span>' : ''}</div>
-        <div class="meta"><span class="badge">${icon} ${escapeHtml(etiqueta)}</span>${escapeHtml(item.anio)}${item.rating ? ' · <span style="color:var(--accent)">' + ratingStars(item.rating) + '</span>' : ''}</div>
-        <div class="price">${resolvePrecio(item)} CUP</div>
-        <div class="btn-row">
-          <button class="btn-ficha">🎬 Ver ficha</button>
-          <button class="btn-cart">${CART_ICON}Agregar</button>
-        </div>
-      </div>
-    `;
-    div.querySelector('img').addEventListener('click', () => openDetail(item));
-    div.querySelector('.title').addEventListener('click', () => openDetail(item));
-    div.querySelector('.btn-ficha').addEventListener('click', () => openDetail(item));
-    div.querySelector('.btn-cart').addEventListener('click', () => handleAddToCart(item));
-    grid.appendChild(div);
-  });
+  // "Todas" y "Estrenos" cruzan categorías: se agrupan con encabezado para no mezclar todo en una sola lista.
+  const agrupar = !activeCategory;
+  if(agrupar){
+    CATEGORY_ORDER.forEach(({ cat, label }) => {
+      const items = filtered.filter(item => item.categoria === cat);
+      if(items.length === 0) return;
+      const section = document.createElement('div');
+      section.className = 'category-section';
+      const heading = document.createElement('div');
+      heading.className = 'category-heading';
+      heading.textContent = label;
+      section.appendChild(heading);
+      const subGrid = document.createElement('div');
+      subGrid.className = 'grid';
+      items.forEach(item => subGrid.appendChild(buildItemCard(item)));
+      section.appendChild(subGrid);
+      grid.appendChild(section);
+    });
+  }else{
+    filtered.forEach(item => grid.appendChild(buildItemCard(item)));
+  }
 }
 
 function extractYoutubeId(url){
