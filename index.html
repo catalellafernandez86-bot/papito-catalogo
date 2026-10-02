@@ -237,7 +237,7 @@
 
 <div class="wrap">
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Buscar por título...">
+    <input type="text" id="searchInput" placeholder="Buscar por título, año o género..." autocomplete="off">
     <div class="chips" id="categoryChips">
       <button class="chip chip-estrenos" data-cat="__ESTRENOS__">🔥 Estrenos</button>
       <button class="chip active" data-cat="">Todas</button>
@@ -397,6 +397,17 @@ async function loadCatalog(){
   }
 }
 
+// Búsqueda: ignora tildes y mayúsculas; cada palabra escrita debe aparecer en título, año o género.
+function normalizeText(str){
+  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function searchText(item){
+  if(!item._search){
+    item._search = normalizeText([item.titulo, item.anio, item.genero].filter(Boolean).join(' '));
+  }
+  return item._search;
+}
+
 function splitField(value){
   return (value || '').split(',').map(s => s.trim()).filter(Boolean);
 }
@@ -471,11 +482,11 @@ function buildItemCard(item){
 
 function render(){
   const grid = document.getElementById('grid');
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const tokens = normalizeText(document.getElementById('searchInput').value).split(' ').filter(Boolean);
   const subField = GENRE_CATEGORIES.includes(activeCategory) ? 'genero' : 'pais';
   const filtered = allItems.filter(item => {
     const matchesCategory = activeEstrenos ? isEstreno(item) : (!activeCategory || itemInCategory(item, activeCategory));
-    const matchesQuery = !query || (item.titulo || '').toLowerCase().includes(query);
+    const matchesQuery = tokens.length === 0 || tokens.every(t => searchText(item).includes(t));
     const matchesSubFilter = activeEstrenos || !activeSubFilter || splitField(item[subField]).includes(activeSubFilter);
     return matchesCategory && matchesQuery && matchesSubFilter;
   });
