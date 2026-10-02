@@ -614,16 +614,37 @@ function buildItemCard(item){
   return div;
 }
 
+// Orden por "recién agregado": usa la fecha de creación (created_at) y, si no existe, el id numérico.
+function addedKey(item, useDate){
+  if(useDate){
+    const t = Date.parse(item.created_at);
+    return isNaN(t) ? null : t;
+  }
+  const n = Number(item.id);
+  return (item.id === null || item.id === undefined || item.id === '' || !isFinite(n)) ? null : n;
+}
+function sortNewestFirst(list){
+  const useDate = allItems.some(i => !isNaN(Date.parse(i.created_at)));
+  return list
+    .map((item, idx) => ({ item, idx, key: addedKey(item, useDate) }))
+    .sort((a, b) => {
+      if(a.key === null || b.key === null || a.key === b.key) return a.idx - b.idx;
+      return b.key - a.key;
+    })
+    .map(x => x.item);
+}
+
 function render(){
   const grid = document.getElementById('grid');
   const tokens = normalizeText(document.getElementById('searchInput').value).split(' ').filter(Boolean);
   const subField = GENRE_CATEGORIES.includes(activeCategory) ? 'genero' : 'pais';
-  const filtered = allItems.filter(item => {
+  let filtered = allItems.filter(item => {
     const matchesCategory = activeEstrenos ? isEstreno(item) : (!activeCategory || itemInCategory(item, activeCategory));
     const matchesQuery = tokens.length === 0 || tokens.every(t => searchText(item).includes(t));
     const matchesSubFilter = activeEstrenos || !activeSubFilter || splitField(item[subField]).includes(activeSubFilter);
     return matchesCategory && matchesQuery && matchesSubFilter;
   });
+  if(activeEstrenos) filtered = sortNewestFirst(filtered);
 
   grid.innerHTML = '';
   const statusEl = document.getElementById('statusMsg');
