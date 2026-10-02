@@ -154,16 +154,67 @@
   .badge{display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--accent-soft); color:var(--accent); margin-right:4px;}
 
   .register-gate{
-    position:fixed; inset:0; z-index:100; background:var(--bg);
+    position:fixed; inset:0; z-index:100; overflow-y:auto;
     display:flex; align-items:center; justify-content:center; padding:24px;
+    background:
+      radial-gradient(460px 300px at 90% 0%, rgba(139,105,220,.30), transparent 70%),
+      radial-gradient(500px 320px at 5% 100%, rgba(227,183,63,.22), transparent 70%),
+      var(--bg);
   }
-  .register-card{width:100%; max-width:360px;}
-  .register-card label{display:block; font-size:.78rem; color:var(--muted); margin:0 0 6px 2px;}
+  /* Tira de película arriba, igual que el encabezado */
+  .register-gate::before{
+    content:''; position:absolute; left:0; right:0; top:0; height:22px; pointer-events:none;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 8px, rgba(255,255,255,.16) 8px 18px, transparent 18px 28px) 0 7px / 100% 8px no-repeat,
+      rgba(0,0,0,.38);
+  }
+  .register-card{
+    position:relative; width:100%; max-width:380px; margin:auto; padding:30px 22px 22px; border-radius:24px;
+    background:linear-gradient(145deg, rgba(255,255,255,.11), rgba(255,255,255,.03));
+    -webkit-backdrop-filter:blur(14px) saturate(140%); backdrop-filter:blur(14px) saturate(140%);
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 20px 50px rgba(0,0,0,.5), 0 0 30px rgba(227,183,63,.10), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .reg-title{
+    margin:0; text-align:center; font-family:'Cinzel',Georgia,serif; font-weight:800; font-size:1.9rem; line-height:1.1;
+    background:linear-gradient(180deg, #ffe9a8, var(--accent) 55%, var(--accent-strong));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .reg-title::after{
+    content:''; display:block; width:46px; height:2px; margin:10px auto 0;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .reg-sub{
+    text-align:center; margin:12px 0 24px 0; font-family:'Playfair Display',Georgia,serif;
+    font-style:italic; font-weight:500; font-size:.98rem; line-height:1.4; color:#cfc6ad;
+  }
+  .register-card label{display:block; font-size:.8rem; font-weight:600; color:#b9bfcb; margin:0 0 7px 3px;}
+  .reg-field{position:relative; margin-bottom:16px;}
+  .reg-field svg{
+    position:absolute; left:15px; top:50%; transform:translateY(-50%);
+    width:19px; height:19px; color:var(--muted); pointer-events:none; transition:color .2s;
+  }
+  .reg-field:focus-within svg{color:var(--accent);}
   .register-card input{
-    width:100%; background:var(--card); color:var(--text); border:1px solid var(--border);
-    border-radius:var(--radius-sm); padding:13px; font-size:.95rem; margin-bottom:14px; font-family:inherit;
+    width:100%; color:var(--text); font-family:inherit; font-size:1rem; padding:14px 14px 14px 46px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:14px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08); transition:border-color .2s, box-shadow .2s, background .2s;
   }
-  .register-card input:focus{outline:none; border-color:var(--accent);}
+  .register-card input:focus{
+    outline:none; background:rgba(255,255,255,.09); border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(227,183,63,.16), 0 0 18px rgba(227,183,63,.18);
+  }
+  .btn-register{
+    width:100%; margin-top:8px; padding:16px; display:flex; align-items:center; justify-content:center; gap:9px;
+    font-family:inherit; font-size:1rem; font-weight:800; letter-spacing:.3px; cursor:pointer;
+    color:var(--accent-ink, #1a1405); border:1px solid rgba(255,255,255,.4); border-radius:16px;
+    background:linear-gradient(135deg, #f6d76b 0%, var(--accent) 50%, var(--accent-strong) 100%);
+    box-shadow:0 8px 22px rgba(227,183,63,.35), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .btn-register svg{width:20px; height:20px; flex-shrink:0;}
+  .btn-register:active{transform:scale(.98); box-shadow:0 3px 10px rgba(227,183,63,.3), inset 0 1px 0 rgba(255,255,255,.4);}
+  .register-card .status{padding:14px 4px 0 4px;}
   .price{font-weight:700; color:var(--accent); font-size:.95rem; margin-top:auto; margin-bottom:8px;}
   .item-info button{
     padding:10px; font-size:.8rem; font-weight:700; border:none; border-radius:var(--radius-sm); cursor:pointer;
@@ -238,12 +289,25 @@
   }
   .empty-cart{text-align:center; color:var(--muted); font-size:.88rem; padding:24px 0;}
   .cart-footer{margin-top:12px; padding-top:14px; border-top:1px solid var(--border);}
-  .cart-footer .btn-wsp{padding:16px; font-size:1rem;}
-  .btn-clear-cart{
-    width:100%; padding:15px; margin-top:10px; background:transparent; color:#f87171;
-    border:2px solid #f87171; border-radius:var(--radius-sm); font-size:.9rem; font-weight:700; cursor:pointer;
+  .cart-footer .btn-wsp{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:16px; font-size:1rem; font-weight:700; letter-spacing:.2px; color:#fff; cursor:pointer;
+    border:1px solid rgba(255,255,255,.28); border-radius:16px;
+    background:linear-gradient(135deg, #34e27a 0%, #25D366 45%, #128C7E 100%);
+    box-shadow:0 8px 22px rgba(37,211,102,.35), inset 0 1px 0 rgba(255,255,255,.38);
+    text-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:transform .15s, box-shadow .15s;
   }
-  .btn-clear-cart:active{background:rgba(248,113,113,.12);}
+  .cart-footer .btn-wsp svg{width:22px; height:22px; flex-shrink:0;}
+  .cart-footer .btn-wsp:active{transform:scale(.98); box-shadow:0 3px 10px rgba(37,211,102,.3), inset 0 1px 0 rgba(255,255,255,.3);}
+  .btn-clear-cart{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:14px; margin-top:12px; background:rgba(248,113,113,.07); color:#f87171;
+    border:1.5px solid rgba(248,113,113,.55); border-radius:16px; font-size:.92rem; font-weight:700; cursor:pointer;
+    transition:background .15s, transform .15s;
+  }
+  .btn-clear-cart svg{width:18px; height:18px; flex-shrink:0;}
+  .btn-clear-cart:active{background:rgba(248,113,113,.18); transform:scale(.98);}
   .cart-count{font-size:.82rem; color:var(--muted); text-align:center; margin-bottom:12px;}
 
   .cap-modal-card{width:100%; max-width:380px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px;}
@@ -269,14 +333,20 @@
 
 <div class="register-gate" id="registerGate">
   <div class="register-card">
-    <div class="brand-mark" style="margin:0 auto 16px auto;">🎬</div>
-    <h2 style="text-align:center; margin:0 0 4px 0;">Bienvenido</h2>
-    <p style="text-align:center; color:var(--muted); font-size:.85rem; margin:0 0 20px 0;">Regístrate para ver el catálogo de AudioVisuales PAPITO-PC.</p>
-    <label>Nombre</label>
-    <input type="text" id="regNombre" placeholder="Tu nombre" autocomplete="off">
-    <label>Número de teléfono</label>
-    <input type="tel" id="regTelefono" placeholder="Ej: 53412345" autocomplete="off">
-    <button class="btn-wsp" onclick="submitRegistration()" style="margin-top:6px;">Continuar</button>
+    <div class="brand-mark" style="margin:0 auto 18px auto;">🎬</div>
+    <h2 class="reg-title">Bienvenido</h2>
+    <p class="reg-sub">Regístrate para ver el catálogo de AudioVisuales PAPITO-PC.</p>
+    <label for="regNombre">Nombre</label>
+    <div class="reg-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <input type="text" id="regNombre" placeholder="Tu nombre" autocomplete="off">
+    </div>
+    <label for="regTelefono">Número de teléfono</label>
+    <div class="reg-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+      <input type="tel" id="regTelefono" placeholder="Ej: 53412345" autocomplete="off">
+    </div>
+    <button class="btn-register" onclick="submitRegistration()">Continuar<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
     <div class="status" id="regStatus"></div>
   </div>
 </div>
@@ -346,7 +416,7 @@
     <div id="cartList"></div>
     <div class="cart-footer">
       <button class="btn-wsp" id="sendCartBtn" onclick="sendCartWhatsapp()"></button>
-      <button class="btn-clear-cart" id="clearCartBtn" onclick="clearCart()">Vaciar pedido</button>
+      <button class="btn-clear-cart" id="clearCartBtn" onclick="clearCart()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>Vaciar pedido</button>
     </div>
   </div>
 </div>
