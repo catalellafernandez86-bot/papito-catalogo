@@ -655,8 +655,8 @@ function render(){
   }
   statusEl.classList.add('hidden');
 
-  // "Todas" y "Estrenos" cruzan categorías: se agrupan con encabezado para no mezclar todo en una sola lista.
-  const agrupar = !activeCategory;
+  // "Todas" cruza categorías y se agrupa con encabezado. "Estrenos" va en una sola lista, lo más reciente primero.
+  const agrupar = !activeCategory && !activeEstrenos;
   if(agrupar){
     CATEGORY_ORDER.forEach(({ cat, label }) => {
       const items = filtered.filter(item => item.categoria === cat);
