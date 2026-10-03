@@ -644,7 +644,11 @@ function render(){
     const matchesSubFilter = activeEstrenos || !activeSubFilter || splitField(item[subField]).includes(activeSubFilter);
     return matchesCategory && matchesQuery && matchesSubFilter;
   });
-  if(activeEstrenos) filtered = sortNewestFirst(filtered);
+  if(activeEstrenos){
+    filtered = sortNewestFirst(filtered);
+  } else if(!activeCategory){
+    filtered = filtered.slice().sort((a, b) => String(a.titulo || '').localeCompare(String(b.titulo || ''), 'es', { sensitivity: 'base' }));
+  }
 
   grid.innerHTML = '';
   const statusEl = document.getElementById('statusMsg');
@@ -655,8 +659,8 @@ function render(){
   }
   statusEl.classList.add('hidden');
 
-  // "Todas" cruza categorías y se agrupa con encabezado. "Estrenos" va en una sola lista, lo más reciente primero.
-  const agrupar = !activeCategory && !activeEstrenos;
+  // Sin encabezados por categoría: "Todas" va en una sola lista A-Z y "Estrenos" lo más reciente primero.
+  const agrupar = false;
   if(agrupar){
     CATEGORY_ORDER.forEach(({ cat, label }) => {
       const items = filtered.filter(item => item.categoria === cat);
